@@ -1,0 +1,26 @@
+# dependencies / build output
+node_modules/
+.next/
+backend/venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# secrets & local env (keep .env.example)
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# runtime state
+backend/data/experiments.db
+
+# Large, rebuildable source downloads (ACS .dat ~470MB, OSM json, TIGER shapefiles)
+backend/data/cache/
+
+# The BUILT research tables ARE committed so the app works with real data out of
+# the box (no scrape / no ACS download needed). Rebuild: python -m realdata.pipeline
+!backend/data/real/
+
+# TS incremental build cache
+*.tsbuildinfo

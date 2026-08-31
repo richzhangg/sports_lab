@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ease: cubic-bezier(0.22, 0.61, 0.24, 1);
+}
+
+html {
+  background: theme(colors.paper);
+  color: theme(colors.ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+body {
+  background:
+    radial-gradient(120% 60% at 50% -10%, rgba(42, 109, 244, 0.05), transparent 60%),
+    theme(colors.paper);
+  min-height: 100vh;
+  font-feature-settings: "kern", "liga";
+}
+
+::selection {
+  background: rgba(42, 109, 244, 0.16);
+}
+
+/* ---------- typography ---------- */
+.font-display { font-family: theme(fontFamily.display); }
+
+.eyebrow {
+  @apply text-[10.5px] font-medium uppercase text-muted;
+  letter-spacing: theme(letterSpacing.eyebrow);
+}
+
+h1, h2, h3 { font-family: theme(fontFamily.display); font-weight: 500; letter-spacing: -0.01em; }
+
+code, kbd, .num { font-family: theme(fontFamily.mono); }
+
+/* ---------- panels ---------- */
+.card {
+  @apply rounded-lg border bg-surface;
+  border-color: theme(colors.line);
+  box-shadow: theme(boxShadow.panel);
+}
+.card-h {
+  @apply flex items-center gap-3 px-5 py-3.5 text-[13px] font-medium text-ink;
+  border-bottom: 1px solid theme(colors.line);
+  font-family: theme(fontFamily.sans);
+}
+.card-b { @apply p-5; }
+
+/* numbered section chip used in card headers */
+.step-no {
+  @apply inline-flex h-6 min-w-6 items-center justify-center rounded-[5px] px-1 text-[12px];
+  font-family: theme(fontFamily.mono);
+  background: theme(colors.ink);
+  color: theme(colors.paper);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- controls ---------- */
+.btn {
+  @apply inline-flex select-none items-center justify-center gap-1.5 rounded-md px-3.5 py-2 text-[13px] font-medium;
+  transition: transform 0.12s var(--ease), background-color 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+.btn:active { transform: translateY(0.5px); }
+.btn-primary {
+  background: theme(colors.ink);
+  color: theme(colors.paper);
+}
+.btn-primary:hover { box-shadow: theme(boxShadow.lift); }
+.btn-primary:disabled { opacity: 0.4; box-shadow: none; }
+.btn-ghost {
+  @apply border bg-surface text-ink;
+  border-color: theme(colors.line-strong);
+}
+.btn-ghost:hover { background: theme(colors.raised); }
+
+.field-input,
+select.field-input,
+textarea.field-input {
+  @apply w-full rounded-md border bg-surface px-2.5 py-2 text-[13px] text-ink;
+  border-color: theme(colors.line-strong);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field-input:focus {
+  outline: none;
+  border-color: theme(colors.accent);
+  box-shadow: 0 0 0 3px rgba(42, 109, 244, 0.12);
+}
+
+.chip {
+  @apply inline-flex cursor-pointer select-none items-center gap-1 rounded-md border px-2.5 py-1 text-[12px] font-medium;
+  border-color: theme(colors.line-strong);
+  background: theme(colors.surface);
+  color: theme(colors.ink-2);
+  transition: background-color 0.14s, border-color 0.14s, color 0.14s;
+}
+.chip:hover { border-color: theme(colors.muted); }
+.chip[data-on="true"] {
+  border-color: theme(colors.accent);
+  background: rgba(42, 109, 244, 0.08);
+  color: theme(colors.accent-ink);
+}
+
+/* ---------- tables ---------- */
+table { @apply w-full border-collapse text-[13px]; }
+th, td { @apply px-2.5 py-2 text-left align-top; }
+thead th {
+  @apply text-[10.5px] font-medium uppercase text-muted;
+  letter-spacing: 0.09em;
+  border-bottom: 1px solid theme(colors.line-strong);
+}
+tbody tr { border-bottom: 1px solid theme(colors.line); }
+tbody tr:last-child { border-bottom: 0; }
+tbody td { font-variant-numeric: tabular-nums; }
+tbody tr:hover { background: theme(colors.raised); }
+
+/* page-load fade for the main column */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.rise { animation: rise 0.5s var(--ease) both; }
+@media (prefers-reduced-motion: reduce) {
+  .rise { animation: none; }
+}
+
+/* thin scroll-progress line */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  background: theme(colors.accent);
+  z-index: 50;
+  transform-origin: 0 50%;
+}

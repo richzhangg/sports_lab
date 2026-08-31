@@ -1,0 +1,11 @@
+{
+  "name": "sports-opportunity-modeling-lab",
+  "private": true,
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "backend": "node scripts/dev.mjs --backend-only",
+    "frontend": "cd frontend && npm run dev",
+    "dev": "node scripts/dev.mjs",
+    "data:real": "node -e \"const{spawnSync}=require('child_process');const a=process.platform==='darwin'&&spawnSync('arch',['-arm64','true']).status===0;const c=a?['arch',['-arm64','backend/venv/bin/python','-m','realdata.pipeline']]:['backend/venv/bin/python',['-m','realdata.pipeline']];process.exit(spawnSync(c[0],c[1],{cwd:'backend',stdio:'inherit'}).status||0)\""
+  }
+}

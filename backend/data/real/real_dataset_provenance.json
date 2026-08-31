@@ -1,0 +1,77 @@
+{
+  "built_at": "2026-08-31T22:42:00.552042+00:00",
+  "n_rows": 16102,
+  "n_counties": 3222,
+  "roster_years": [
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "acs_vintages_used": [
+    2022,
+    2023
+  ],
+  "acs_vintages_available": [
+    2022,
+    2023
+  ],
+  "roster_source": "Scrape of public team roster pages \u2014 278 NCAA Division I men's & women's tennis programs across 24 conferences",
+  "roster_conferences": [
+    "ACC",
+    "ASUN",
+    "American",
+    "Atlantic 10",
+    "Big 12",
+    "Big East",
+    "Big South",
+    "Big Ten",
+    "Big West",
+    "CAA",
+    "Conference USA",
+    "Horizon",
+    "Independents / other",
+    "Ivy League",
+    "MAC",
+    "Missouri Valley",
+    "Mountain West",
+    "Pac-12",
+    "SEC",
+    "Southern",
+    "Southland / WAC / Patriot / Big Sky / MEAC / SWAC",
+    "Summit / MAAC / NEC / OVC",
+    "Sun Belt",
+    "WCC"
+  ],
+  "roster_schools": 278,
+  "roster_player_seasons": 22605,
+  "roster_geocode_matches": {
+    "international": 13043,
+    "exact": 8717,
+    "none": 425,
+    "fuzzy:90": 292,
+    "fuzzy:95": 71,
+    "fuzzy:92": 18,
+    "fuzzy:96": 15,
+    "fuzzy:94": 13,
+    "fuzzy:93": 7,
+    "fuzzy:88": 4
+  },
+  "roster_geocoded_ok": 9137,
+  "roster_international_or_unresolved": 13468,
+  "total_d1_players_placed": 9137,
+  "counties_with_players": 580,
+  "tennis_courts_total_osm": 199921,
+  "sources": {
+    "socioeconomic": "U.S. Census Bureau, American Community Survey 5-year \u2014 public Summary File bulk files (www2.census.gov)",
+    "geography": "U.S. Census Bureau 2023 Gazetteer + TIGER/Line cb_2023 counties",
+    "tennis_access": "OpenStreetMap via Overpass API (sport=tennis), \u00a9 OSM contributors, ODbL",
+    "rosters": "Public NCAA Division I tennis team roster pages (278 programs)"
+  },
+  "limitations": [
+    "Outcome = NCAA Division I tennis players on the 278 programs the scraper could read (of ~300 D1 programs); it undercounts true D1 representation for counties whose players attend the ~30 schools not covered.",
+    "Predictors use ACS 5-year vintage (roster_year - 1); tennis courts are a single current OSM snapshot.",
+    "13468 of 22605 player-seasons have an international or unresolved hometown and are not placed in a U.S. county."
+  ]
+}
