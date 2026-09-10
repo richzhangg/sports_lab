@@ -115,7 +115,12 @@ export default function MapPage() {
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.25 }}
               >
-                <CountyPanel detail={detail} loading={loadingDetail} onClose={() => select(null)} />
+                <CountyPanel
+                  detail={detail}
+                  year={year ?? geo?.year ?? undefined}
+                  loading={loadingDetail}
+                  onClose={() => select(null)}
+                />
               </motion.div>
             ) : (
               <motion.div
@@ -158,10 +163,12 @@ export default function MapPage() {
 
 function CountyPanel({
   detail,
+  year,
   loading,
   onClose,
 }: {
   detail: CountyDetail | null;
+  year?: number;
   loading: boolean;
   onClose: () => void;
 }) {
@@ -183,7 +190,12 @@ function CountyPanel({
       </div>
     );
 
-  const latest = detail.by_year?.[detail.by_year.length - 1];
+  const latest =
+    (year != null ? detail.by_year?.find((r) => r.year === year) : undefined) ??
+    detail.by_year?.[detail.by_year.length - 1];
+  const allPlayers = detail.players ?? [];
+  const players =
+    year != null ? allPlayers.filter((p) => p.seasons.includes(year)) : allPlayers;
   const rows: [string, string][] = latest
     ? [
         ["Population", fmtInt(latest.population)],
@@ -205,9 +217,12 @@ function CountyPanel({
       </div>
       <div className="card-b space-y-4">
         <div className="flex items-baseline gap-2">
-          <span className="font-display text-[34px] leading-none text-ink">{detail.player_count}</span>
+          <span className="font-display text-[34px] leading-none text-ink">
+            {year != null ? players.length : detail.player_count}
+          </span>
           <span className="text-[12px] text-muted">
-            NCAA D1 tennis player{detail.player_count === 1 ? "" : "s"} from this county
+            NCAA D1 tennis player{(year != null ? players.length : detail.player_count) === 1 ? "" : "s"} from this
+            county{year != null ? ` · ${year} rosters` : " · all seasons"}
           </span>
         </div>
 
@@ -224,11 +239,9 @@ function CountyPanel({
         </div>
 
         <div className="max-h-[42vh] overflow-auto">
-          <p className="eyebrow mb-1.5">
-            The players ({detail.players?.length ?? 0})
-          </p>
+          <p className="eyebrow mb-1.5">The players ({players.length})</p>
           <ul className="space-y-1.5">
-            {(detail.players ?? []).map((p, i) => (
+            {players.map((p, i) => (
               <li key={`${p.player_name}-${p.school}-${i}`} className="rounded-md bg-raised px-2.5 py-1.5">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-[13px] font-medium text-ink">{p.player_name}</span>
@@ -240,8 +253,12 @@ function CountyPanel({
                 <div className="text-[11px] text-muted">from {p.hometown_raw}</div>
               </li>
             ))}
-            {!detail.players?.length && (
-              <li className="text-[12px] text-muted">No players resolved to this county.</li>
+            {!players.length && (
+              <li className="text-[12px] text-muted">
+                {year != null
+                  ? `No players on ${year} rosters resolved to this county.`
+                  : "No players resolved to this county."}
+              </li>
             )}
           </ul>
         </div>
