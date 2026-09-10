@@ -26,8 +26,8 @@ import json
 
 import pandas as pd
 
-from .paths import (CENSUS_ACS, COUNTY_MASTER, REAL_DATASET, ROSTERS_PILOT,
-                    TENNIS_COURTS)
+from .paths import (CENSUS_ACS, COUNTY_MASTER, REAL_DATASET, ROSTERS_GEOCODED,
+                    ROSTERS_PILOT, TENNIS_COURTS)
 from .geocode import geocode_series
 
 PROV = REAL_DATASET.replace(".csv", "_provenance.json")
@@ -52,9 +52,18 @@ def build() -> pd.DataFrame:
 
     # --- geocode hometowns -> counties -------------------------------------
     gc = geocode_series(rosters["hometown_raw"])
-    rosters = pd.concat([rosters.reset_index(drop=True), gc[["county_fips", "match"]]], axis=1)
+    rosters = pd.concat(
+        [rosters.reset_index(drop=True),
+         gc[["county_fips", "county_name", "state", "match"]].rename(columns={"state": "geo_state"})],
+        axis=1,
+    )
     matched = rosters.dropna(subset=["county_fips"])
     match_stats = rosters["match"].value_counts().to_dict()
+    # one row per player-season with its resolved county — powers player search
+    # and the interactive map without re-geocoding at request time.
+    rosters.drop(columns=["source_url", "division"], errors="ignore").to_csv(
+        ROSTERS_GEOCODED, index=False
+    )
 
     counts = (matched.groupby(["county_fips", "season"]).size()
               .reset_index(name="d1_players").rename(columns={"season": "year"}))

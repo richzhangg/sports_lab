@@ -96,9 +96,19 @@ def rosters(sample: int = 40):
     return data.rosters_info(sample=sample)
 
 
+@app.get("/api/players")
+def players(q: str = "", limit: int = 60):
+    return data.players_search(q, limit=limit)
+
+
+@app.get("/api/county/{fips}")
+def county(fips: str):
+    return data.county_detail(fips)
+
+
 @app.get("/api/geo")
-def geo():
-    return geo_api.build()
+def geo(year: int | None = None):
+    return geo_api.build(year=year)
 
 
 @app.post("/api/run")

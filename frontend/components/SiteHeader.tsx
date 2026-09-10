@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 
 const NAV = [
   { href: "/lab", label: "Lab" },
+  { href: "/map", label: "Map" },
   { href: "/data", label: "Data" },
   { href: "/compare", label: "Compare" },
   { href: "/method", label: "Method" },

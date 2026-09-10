@@ -21,7 +21,8 @@ COUNTY_MASTER = os.path.join(REAL, "county_master.csv")        # FIPS, name, sta
 CITY_COUNTY_XWALK = os.path.join(REAL, "city_county_xwalk.csv")  # city/state -> county FIPS
 CENSUS_ACS = os.path.join(REAL, "census_acs_counties.csv")     # ACS predictors per county-year
 TENNIS_COURTS = os.path.join(REAL, "tennis_courts_by_county.csv")
-ROSTERS_PILOT = os.path.join(REAL, "rosters_pilot.csv")        # scraped ACC+Big Ten rosters
+ROSTERS_PILOT = os.path.join(REAL, "rosters_pilot.csv")        # scraped D1 rosters
+ROSTERS_GEOCODED = os.path.join(REAL, "rosters_geocoded.csv")  # + resolved county per player
 ROSTER_TEMPLATE = os.path.join(REAL, "roster_import_template.csv")
 REAL_DATASET = os.path.join(REAL, "real_dataset.csv")          # final county-year panel
 

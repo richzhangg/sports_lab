@@ -163,6 +163,73 @@ export interface RostersInfo {
   sample?: Record<string, unknown>[];
 }
 export const getRosters = () => fetch("/api/rosters?sample=40").then((r) => j<RostersInfo>(r));
+
+export interface PlayerHit {
+  player_name: string;
+  school: string;
+  gender: string;
+  conference: string;
+  hometown_raw: string;
+  county_fips: string | null;
+  county_name: string | null;
+  seasons: number[];
+}
+export interface PlayerSearchResult {
+  available: boolean;
+  query?: string;
+  total: number;
+  results: PlayerHit[];
+}
+export const searchPlayers = (q: string, limit = 60) =>
+  fetch(`/api/players?q=${encodeURIComponent(q)}&limit=${limit}`).then((r) => j<PlayerSearchResult>(r));
+
+export interface CountyYearRow {
+  year: number;
+  population: number | null;
+  median_income: number | null;
+  poverty_rate: number | null;
+  pct_bachelors: number | null;
+  tennis_courts_per_100k: number | null;
+  pop_density: number | null;
+  d1_players: number | null;
+  d1_rate_per_100k: number | null;
+}
+export interface CountyPlayer {
+  player_name: string;
+  school: string;
+  gender: string;
+  conference: string;
+  hometown_raw: string;
+  seasons: number[];
+}
+export interface CountyDetail {
+  found: boolean;
+  fips?: string;
+  name?: string;
+  state?: string;
+  by_year?: CountyYearRow[];
+  players?: CountyPlayer[];
+  player_count?: number;
+}
+export const getCounty = (fips: string) =>
+  fetch(`/api/county/${fips}`).then((r) => j<CountyDetail>(r));
+
+export interface GeoCounty {
+  fips: string;
+  name: string;
+  lat: number;
+  lon: number;
+  players: number;
+}
+export interface GeoPayload {
+  year: number | null;
+  years: number[];
+  max_players: number;
+  total_players: number;
+  counties: GeoCounty[];
+}
+export const getGeo = (year?: number) =>
+  fetch(`/api/geo${year ? `?year=${year}` : ""}`).then((r) => j<GeoPayload>(r));
 export const runModel = (req: RunRequest) =>
   fetch("/api/run", {
     method: "POST",

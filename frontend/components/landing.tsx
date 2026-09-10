@@ -51,18 +51,20 @@ export function Hero() {
             <Link href="/lab" className="btn btn-primary !px-5 !py-2.5 text-[13px]">
               Open the Lab &nbsp;→
             </Link>
-            <Link href="/data" className="btn btn-ghost !px-4 !py-2.5 text-[13px]">
-              See the data
+            <Link href="/map" className="btn btn-ghost !px-4 !py-2.5 text-[13px]">
+              Explore the map
             </Link>
           </motion.div>
         </motion.div>
 
         <motion.div style={{ y: mapY, opacity: mapOpacity }} className="relative">
-          <CountyDotMap className="mx-auto max-w-[720px]" />
-          <p className="mt-2 text-center font-mono text-[10.5px] text-muted">
-            Each glowing point is a U.S. county; size = NCAA D1 tennis players from that community
-            (2026 rosters).
-          </p>
+          <Link href="/map" className="group block">
+            <CountyDotMap interactive={false} className="mx-auto max-w-[720px] transition-opacity group-hover:opacity-90" />
+            <p className="mt-2 text-center font-mono text-[10.5px] text-muted">
+              Each glowing point is a U.S. county; size = NCAA D1 tennis players.{" "}
+              <span className="text-accent-ink group-hover:underline">Explore the map →</span>
+            </p>
+          </Link>
         </motion.div>
       </div>
     </section>

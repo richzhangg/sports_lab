@@ -40,17 +40,19 @@ def _build_states_outline() -> dict:
     return json.loads(states.to_json())
 
 
-def build(force: bool = False) -> dict:
-    if not force and os.path.exists(GEO_JSON):
-        with open(GEO_JSON) as fh:
-            return json.load(fh)
+def _available_years() -> list[int]:
+    if not os.path.exists(REAL_DATASET):
+        return []
+    return sorted(int(y) for y in pd.read_csv(REAL_DATASET, usecols=["year"])["year"].unique())
 
+
+def _payload_for_year(year: int | None) -> dict:
     cm = pd.read_csv(COUNTY_MASTER, dtype={"county_fips": str})
-    payload: dict = {}
+    years = _available_years()
 
-    if os.path.exists(REAL_DATASET):
+    if years:
         df = pd.read_csv(REAL_DATASET, dtype={"community_id": str})
-        year = int(df["year"].max())
+        year = year if year in years else max(years)
         d = df[df["year"] == year][["community_id", "d1_players"]]
         merged = cm.merge(d, left_on="county_fips", right_on="community_id", how="left")
         merged["d1_players"] = merged["d1_players"].fillna(0).astype(int)
@@ -61,25 +63,41 @@ def build(force: bool = False) -> dict:
 
     merged = merged[~merged["county_fips"].str.slice(0, 2).isin(_DROP_STATE_FIPS)]
     merged = merged.dropna(subset=["lat", "lon"])
-    payload["year"] = year
-    payload["max_players"] = int(merged["d1_players"].max())
-    payload["total_players"] = int(merged["d1_players"].sum())
-    payload["counties"] = [
-        {
-            "fips": r.county_fips,
-            "name": f"{r.county_name}, {r.state}",
-            "lat": round(float(r.lat), 4),
-            "lon": round(float(r.lon), 4),
-            "players": int(r.d1_players),
-        }
-        for r in merged.itertuples()
-    ]
+    return {
+        "year": year,
+        "years": years,
+        "max_players": int(merged["d1_players"].max()) if len(merged) else 0,
+        "total_players": int(merged["d1_players"].sum()),
+        "counties": [
+            {
+                "fips": r.county_fips,
+                "name": f"{r.county_name}, {r.state}",
+                "lat": round(float(r.lat), 4),
+                "lon": round(float(r.lon), 4),
+                "players": int(r.d1_players),
+            }
+            for r in merged.itertuples()
+        ],
+    }
 
-    with open(GEO_JSON, "w") as fh:
-        json.dump(payload, fh)
-    return payload
+
+def build(force: bool = False, year: int | None = None) -> dict:
+    """Default (latest) year is cached to geo_payload.json; other years compute fresh."""
+    years = _available_years()
+    latest = max(years) if years else None
+    if year is None or year == latest:
+        if not force and os.path.exists(GEO_JSON):
+            with open(GEO_JSON) as fh:
+                payload = json.load(fh)
+            payload.setdefault("years", years)  # backfill for older cache files
+            return payload
+        payload = _payload_for_year(latest)
+        with open(GEO_JSON, "w") as fh:
+            json.dump(payload, fh)
+        return payload
+    return _payload_for_year(year)
 
 
 if __name__ == "__main__":
     p = build(force=True)
-    print(f"counties={len(p['counties'])}  year={p['year']}  max={p['max_players']}")
+    print(f"counties={len(p['counties'])}  year={p['year']}  years={p['years']}  max={p['max_players']}")

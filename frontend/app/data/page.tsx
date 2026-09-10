@@ -1,4 +1,5 @@
 import DataPreview from "@/components/DataPreview";
+import PlayerSearch from "@/components/PlayerSearch";
 
 export default function DataPage() {
   return (
@@ -9,7 +10,10 @@ export default function DataPage() {
           The NCAA record, joined to the Census.
         </h1>
       </div>
-      <DataPreview />
+      <div className="space-y-4">
+        <PlayerSearch />
+        <DataPreview />
+      </div>
     </main>
   );
 }

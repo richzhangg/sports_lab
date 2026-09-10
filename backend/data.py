@@ -162,6 +162,114 @@ def source_info() -> dict:
 
 
 ROSTERS_CSV = os.path.join(DATA_DIR, "real", "rosters_pilot.csv")
+ROSTERS_GEOCODED_CSV = os.path.join(DATA_DIR, "real", "rosters_geocoded.csv")
+
+
+@lru_cache(maxsize=1)
+def geocoded_rosters() -> pd.DataFrame:
+    """One row per player-season with its resolved U.S. county.
+
+    Prefers the committed rosters_geocoded.csv; if absent (e.g. an old build),
+    geocodes rosters_pilot.csv on the fly once and caches the result.
+    """
+    if os.path.exists(ROSTERS_GEOCODED_CSV):
+        return pd.read_csv(ROSTERS_GEOCODED_CSV, dtype={"county_fips": str})
+    from realdata.geocode import geocode_series
+
+    r = pd.read_csv(ROSTERS_CSV)
+    gc = geocode_series(r["hometown_raw"])
+    return pd.concat(
+        [r.reset_index(drop=True),
+         gc[["county_fips", "county_name", "state", "match"]].rename(columns={"state": "geo_state"})],
+        axis=1,
+    )
+
+
+def _seasons(s) -> list[int]:
+    return sorted({int(x) for x in s if pd.notna(x)})
+
+
+def players_search(q: str, limit: int = 60) -> dict:
+    """Search roster players by name, school, or hometown."""
+    if not ACTIVE_SOURCE.is_real:
+        return {"available": False, "total": 0, "results": []}
+    ql = (q or "").strip().lower()
+    if len(ql) < 2:
+        return {"available": True, "total": 0, "results": [], "query": q}
+
+    r = geocoded_rosters()
+    contains = lambda col: r[col].astype(str).str.lower().str.contains(ql, regex=False, na=False)
+    hits = r[contains("player_name") | contains("school") | contains("hometown_raw")]
+
+    grp = (
+        hits.sort_values("season")
+        .groupby(["player_name", "school"], as_index=False)
+        .agg(
+            gender=("gender", "first"),
+            conference=("conference", "first"),
+            hometown_raw=("hometown_raw", "first"),
+            county_fips=("county_fips", "first"),
+            county_name=("county_name", "first"),
+            seasons=("season", _seasons),
+        )
+        .sort_values(["player_name", "school"])
+    )
+    return {
+        "available": True,
+        "query": q,
+        "total": int(len(grp)),
+        "results": grp.head(limit).where(pd.notna(grp), None).to_dict(orient="records"),
+    }
+
+
+_PANEL_FIELDS = ("year", "population", "median_income", "poverty_rate", "pct_bachelors",
+                 "tennis_courts_per_100k", "pop_density", "d1_players", "d1_rate_per_100k")
+
+
+def county_detail(fips: str) -> dict:
+    """Everything the interactive map shows for one county: the panel row(s) by
+    year plus the roster players whose hometown resolves there."""
+    fips = str(fips).strip().zfill(5)
+    df = get_dataframe()
+    rows = df[df["community_id"].astype(str).str.zfill(5) == fips]
+    if rows.empty:
+        return {"found": False}
+
+    def _num(v):
+        if pd.isna(v):
+            return None
+        return int(v) if float(v).is_integer() else round(float(v), 3)
+
+    by_year = [
+        {k: _num(rr[k]) for k in _PANEL_FIELDS if k in rows.columns}
+        for _, rr in rows.sort_values("year").iterrows()
+    ]
+
+    players: list[dict] = []
+    if ACTIVE_SOURCE.is_real:
+        gr = geocoded_rosters()
+        pl = gr[gr["county_fips"].astype(str).str.zfill(5) == fips]
+        players = (
+            pl.groupby(["player_name", "school"], as_index=False)
+            .agg(
+                gender=("gender", "first"),
+                conference=("conference", "first"),
+                hometown_raw=("hometown_raw", "first"),
+                seasons=("season", _seasons),
+            )
+            .sort_values("player_name")
+            .to_dict(orient="records")
+        )
+
+    return {
+        "found": True,
+        "fips": fips,
+        "name": str(rows.iloc[0]["community_name"]),
+        "state": str(rows.iloc[0].get("state", "")),
+        "by_year": by_year,
+        "players": players,
+        "player_count": len(players),
+    }
 
 
 def rosters_info(sample: int = 40) -> dict:

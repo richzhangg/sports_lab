@@ -1,31 +1,45 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { geoAlbersUsa } from "d3-geo";
-
-type County = { fips: string; name: string; lat: number; lon: number; players: number };
-type Geo = { counties: County[]; max_players: number; year: number };
+import { getGeo, type GeoCounty, type GeoPayload } from "@/lib/api";
 
 // d3.geoAlbersUsa()'s default scale/translate is tuned for exactly 960×600.
 const W = 960;
 const H = 600;
 
 export default function CountyDotMap({
+  year,
   interactive = true,
+  onSelect,
+  selectedFips,
+  onData,
   className = "",
 }: {
+  year?: number;
   interactive?: boolean;
+  onSelect?: (fips: string) => void;
+  selectedFips?: string | null;
+  onData?: (p: GeoPayload) => void;
   className?: string;
 }) {
-  const [geo, setGeo] = useState<Geo | null>(null);
-  const [hover, setHover] = useState<{ x: number; y: number; c: County } | null>(null);
+  const [geo, setGeo] = useState<GeoPayload | null>(null);
+  const [hover, setHover] = useState<{ x: number; y: number; c: GeoCounty } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
-    fetch("/api/geo")
-      .then((r) => r.json())
-      .then(setGeo)
+    let live = true;
+    getGeo(year)
+      .then((p) => {
+        if (!live) return;
+        setGeo(p);
+        onData?.(p);
+      })
       .catch(() => {});
-  }, []);
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [year]);
 
   const model = useMemo(() => {
     if (!geo) return null;
@@ -35,14 +49,18 @@ export default function CountyDotMap({
         const p = projection([c.lon, c.lat]);
         return p ? { c, x: p[0], y: p[1] } : null;
       })
-      .filter((d): d is { c: County; x: number; y: number } => !!d);
-
+      .filter((d): d is { c: GeoCounty; x: number; y: number } => !!d);
     const withPlayers = pts.filter((d) => d.c.players > 0).sort((a, b) => a.c.players - b.c.players);
     const zeros = pts.filter((d) => d.c.players === 0);
     const rmax = geo.max_players || 1;
     const radius = (n: number) => 1.8 + Math.sqrt(n / rmax) * 13;
     return { withPlayers, zeros, radius };
   }, [geo]);
+
+  const toLocal = (e: React.MouseEvent) => {
+    const r = svgRef.current!.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H };
+  };
 
   return (
     <div className={`relative ${className}`}>
@@ -78,31 +96,32 @@ export default function CountyDotMap({
         <g>
           {model?.withPlayers.map((d, i) => {
             const big = d.c.players >= (geo!.max_players || 1) * 0.4;
+            const isSel = selectedFips === d.c.fips;
             return (
               <g key={d.c.fips}>
-                <circle cx={d.x} cy={d.y} r={model.radius(d.c.players) + 5} fill="url(#dotGlow)" opacity={0.55} />
+                <circle
+                  cx={d.x}
+                  cy={d.y}
+                  r={model.radius(d.c.players) + (isSel ? 9 : 5)}
+                  fill="url(#dotGlow)"
+                  opacity={isSel ? 0.9 : 0.55}
+                />
                 <circle
                   cx={d.x}
                   cy={d.y}
                   r={model.radius(d.c.players)}
-                  fill="#2a6df4"
+                  fill={isSel ? "#c05327" : "#2a6df4"}
                   fillOpacity={0.92}
                   stroke="#fffdf8"
-                  strokeWidth={0.6}
-                  className={`dot-pop ${big ? "dot-pulse" : ""}`}
-                  style={{ animationDelay: `${350 + i * 3}ms` }}
-                  onMouseEnter={
-                    interactive
-                      ? (e) => {
-                          const r = svgRef.current!.getBoundingClientRect();
-                          setHover({
-                            x: ((e.clientX - r.left) / r.width) * W,
-                            y: ((e.clientY - r.top) / r.height) * H,
-                            c: d.c,
-                          });
-                        }
-                      : undefined
-                  }
+                  strokeWidth={isSel ? 1.4 : 0.6}
+                  className={`dot-pop ${big && !isSel ? "dot-pulse" : ""}`}
+                  style={{
+                    animationDelay: `${350 + i * 3}ms`,
+                    cursor: onSelect ? "pointer" : "default",
+                  }}
+                  onMouseEnter={interactive ? (e) => setHover({ ...toLocal(e), c: d.c }) : undefined}
+                  onMouseMove={interactive ? (e) => setHover({ ...toLocal(e), c: d.c }) : undefined}
+                  onClick={onSelect ? () => onSelect(d.c.fips) : undefined}
                 />
               </g>
             );
@@ -118,6 +137,7 @@ export default function CountyDotMap({
               </text>
               <text x={8} y={24} fill="#a9c4f7" fontSize={9} fontFamily="var(--font-mono)">
                 {hover.c.players} D1 player{hover.c.players === 1 ? "" : "s"}
+                {onSelect ? " · click to open" : ""}
               </text>
             </g>
           </g>
