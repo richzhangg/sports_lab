@@ -136,6 +136,12 @@ export interface RunRequest {
   variables?: Record<string, string>;
 }
 
+// In production the API lives on its own host (see DEPLOY.md); locally it's the
+// dev proxy. Requests go straight to the backend so the browser — not a Vercel
+// edge proxy with a 30 s cap — waits out a free-tier cold start.
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+const u = (path: string) => `${API_BASE}${path}`;
+
 async function j<T>(r: Response): Promise<T> {
   if (!r.ok) {
     const body = await r.json().catch(() => ({}));
@@ -144,9 +150,9 @@ async function j<T>(r: Response): Promise<T> {
   return r.json();
 }
 
-export const getMetadata = () => fetch("/api/metadata").then((r) => j<Metadata>(r));
+export const getMetadata = () => fetch(u("/api/metadata")).then((r) => j<Metadata>(r));
 export const getPreview = () =>
-  fetch("/api/preview?limit=30").then((r) =>
+  fetch(u("/api/preview?limit=30")).then((r) =>
     j<{ columns: string[]; rows: Record<string, unknown>[]; source: SourceInfo }>(r),
   );
 
@@ -162,7 +168,7 @@ export interface RostersInfo {
   columns?: string[];
   sample?: Record<string, unknown>[];
 }
-export const getRosters = () => fetch("/api/rosters?sample=40").then((r) => j<RostersInfo>(r));
+export const getRosters = () => fetch(u("/api/rosters?sample=40")).then((r) => j<RostersInfo>(r));
 
 export interface PlayerHit {
   player_name: string;
@@ -181,7 +187,7 @@ export interface PlayerSearchResult {
   results: PlayerHit[];
 }
 export const searchPlayers = (q: string, limit = 60) =>
-  fetch(`/api/players?q=${encodeURIComponent(q)}&limit=${limit}`).then((r) => j<PlayerSearchResult>(r));
+  fetch(u(`/api/players?q=${encodeURIComponent(q)}&limit=${limit}`)).then((r) => j<PlayerSearchResult>(r));
 
 export interface CountyYearRow {
   year: number;
@@ -212,7 +218,7 @@ export interface CountyDetail {
   player_count?: number;
 }
 export const getCounty = (fips: string) =>
-  fetch(`/api/county/${fips}`).then((r) => j<CountyDetail>(r));
+  fetch(u(`/api/county/${fips}`)).then((r) => j<CountyDetail>(r));
 
 export interface GeoCounty {
   fips: string;
@@ -229,9 +235,9 @@ export interface GeoPayload {
   counties: GeoCounty[];
 }
 export const getGeo = (year?: number) =>
-  fetch(`/api/geo${year ? `?year=${year}` : ""}`).then((r) => j<GeoPayload>(r));
+  fetch(u(`/api/geo${year ? `?year=${year}` : ""}`)).then((r) => j<GeoPayload>(r));
 export const runModel = (req: RunRequest) =>
-  fetch("/api/run", {
+  fetch(u("/api/run"), {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(req),
@@ -256,17 +262,80 @@ export interface SavedExperimentFull extends SavedExperiment {
   result: RunResult;
 }
 
-export const listExperiments = () =>
-  fetch("/api/experiments").then((r) => j<SavedExperiment[]>(r));
-export const saveExperiment = (label: string, result: RunResult) =>
-  fetch("/api/experiments", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ label, result }),
-  }).then((r) => j<SavedExperiment>(r));
-export const getExperiment = (id: string) =>
-  fetch(`/api/experiments/${id}`).then((r) => j<SavedExperimentFull>(r));
-export const deleteExperiment = (id: string) =>
-  fetch(`/api/experiments/${id}`, { method: "DELETE" }).then((r) => j<{ deleted: string }>(r));
-export const clearExperiments = () =>
-  fetch("/api/experiments", { method: "DELETE" }).then((r) => j<{ deleted: number }>(r));
+/**
+ * Saved models live in the visitor's own browser (localStorage) — no database
+ * to run or pay for. Per-browser; survive reloads; not shared across devices.
+ * Functions keep a Promise API so callers don't change.
+ */
+const XKEY = "sol.experiments.v1";
+
+interface StoredExperiment {
+  id: string;
+  created_at: number;
+  label: string;
+  result: RunResult;
+}
+
+const readStore = (): StoredExperiment[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(XKEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+};
+const writeStore = (arr: StoredExperiment[]) => {
+  try {
+    window.localStorage.setItem(XKEY, JSON.stringify(arr));
+  } catch {
+    /* quota / private mode — silently no-op */
+  }
+};
+const summarize = (x: StoredExperiment): SavedExperiment => ({
+  id: x.id,
+  created_at: x.created_at,
+  label: x.label,
+  source_key: (x.result.spec as { source_key?: string }).source_key ?? null,
+  spec: x.result.spec,
+  train_metrics: x.result.train_metrics,
+  test_metrics: x.result.test_metrics,
+  diagnostics: x.result.diagnostics,
+  vs_baseline: x.result.vs_baseline,
+  overfitting: x.result.overfitting,
+  cross_validation: x.result.cross_validation,
+});
+
+export const listExperiments = async (): Promise<SavedExperiment[]> =>
+  readStore()
+    .sort((a, b) => a.created_at - b.created_at)
+    .map(summarize);
+
+export const saveExperiment = async (label: string, result: RunResult): Promise<SavedExperiment> => {
+  const rec: StoredExperiment = {
+    id: (globalThis.crypto?.randomUUID?.() ?? String(Date.now() + Math.random())).slice(0, 12),
+    created_at: Date.now() / 1000,
+    label,
+    result,
+  };
+  writeStore([...readStore(), rec]);
+  return summarize(rec);
+};
+
+export const getExperiment = async (id: string): Promise<SavedExperimentFull> => {
+  const x = readStore().find((e) => e.id === id);
+  if (!x) throw new Error("experiment not found");
+  return { ...summarize(x), result: x.result };
+};
+
+export const deleteExperiment = async (id: string): Promise<{ deleted: string }> => {
+  writeStore(readStore().filter((e) => e.id !== id));
+  return { deleted: id };
+};
+
+export const clearExperiments = async (): Promise<{ deleted: number }> => {
+  const n = readStore().length;
+  writeStore([]);
+  return { deleted: n };
+};

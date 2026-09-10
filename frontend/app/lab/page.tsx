@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import ConfigPanel, { type Config, toRequest } from "@/components/ConfigPanel";
 import ResultsView from "@/components/ResultsView";
-import { getMetadata, runModel, saveExperiment, type Metadata, type RunResult } from "@/lib/api";
+import { getMetadata, runModel, saveExperiment, listExperiments, type Metadata, type RunResult } from "@/lib/api";
 import { specSummary } from "@/lib/format";
 
 const KEY = "sol.lab.v1";
@@ -50,9 +50,8 @@ export default function LabPage() {
         restored.current = true;
       })
       .catch((e) => setMetaErr(String(e)));
-    fetch("/api/experiments")
-      .then((r) => r.json())
-      .then((d) => setSavedCount(Array.isArray(d) ? d.length : 0))
+    listExperiments()
+      .then((d) => setSavedCount(d.length))
       .catch(() => {});
   }, []);
 
