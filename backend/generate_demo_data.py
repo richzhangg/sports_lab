@@ -9,7 +9,7 @@ loader without touching the modeling code (see data.py).
 
 Data-generating process (per community, per year)
 ------------------------------------------------
-  log(mu) = log(population/100000)                      # offset -> counts scale to a rate
+  log(mu) = log(youth_population/100000)                 # offset -> counts scale to a rate
             + b0
             + b_income   * z(median_income)
             + b_poverty  * z(poverty_rate)
@@ -50,6 +50,10 @@ def build() -> pd.DataFrame:
     pop_density = RNG.lognormal(mean=6.5, sigma=1.1, size=N_COMMUNITIES).clip(20, 45_000)
     tennis_courts = (2.5 + 0.00004 * (median_income - 68_000)
                      + RNG.normal(0, 1.6, N_COMMUNITIES)).clip(0.05, 14)
+    # under-18 share of the population varies community to community (~18-26%,
+    # roughly the real US county range) rather than being a fixed fraction.
+    youth_share = RNG.normal(0.22, 0.025, N_COMMUNITIES).clip(0.14, 0.32)
+    youth_population = (pop * youth_share).round(0).astype(int).clip(min=1)
 
     state = RNG.choice(STATES, size=N_COMMUNITIES)
     community_id = np.array([f"C{ i:04d}" for i in range(N_COMMUNITIES)])
@@ -66,7 +70,7 @@ def build() -> pd.DataFrame:
     rows = []
     for yi, year in enumerate(YEARS):
         year_drift = 0.02 * (yi - 1.5)
-        log_mu = (np.log(pop / 100_000) + B0 + year_drift
+        log_mu = (np.log(youth_population / 100_000) + B0 + year_drift
                   + B_INCOME * zi + B_POVERTY * zp + B_BACH * zb
                   + B_COURTS * zc + B_DENSITY * zd
                   + RNG.normal(0, 0.05, N_COMMUNITIES))
@@ -82,6 +86,7 @@ def build() -> pd.DataFrame:
             "state": state,
             "year": year,
             "population": pop.round(0).astype(int),
+            "youth_population": youth_population,
             "median_income": median_income.round(0).astype(int),
             "poverty_rate": poverty_rate.round(2),
             "pct_bachelors": pct_bachelors.round(2),

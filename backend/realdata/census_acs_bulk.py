@@ -14,7 +14,8 @@ available range.
 
 Produces the SAME output as census_acs.py:
   data/real/census_acs_counties.csv
-  county_fips, year, population, median_income, poverty_rate, pct_bachelors, pop_density
+  county_fips, year, population, youth_population, median_income, poverty_rate,
+  pct_bachelors, pop_density
 
 ~235 MB per vintage is downloaded once and cached in data/cache/.
 """
@@ -36,7 +37,11 @@ NEEDED = {
     "b17001": ["B17001_E001", "B17001_E002"],                    # poverty universe / below poverty
     "b15003": ["B15003_E001", "B15003_E022", "B15003_E023",      # 25+ total / bachelor / master
                "B15003_E024", "B15003_E025"],                    #   / professional / doctorate
+    "b01001": ["B01001_E003", "B01001_E004", "B01001_E005", "B01001_E006",   # male <5,5-9,10-14,15-17
+               "B01001_E027", "B01001_E028", "B01001_E029", "B01001_E030"],  # female <5,5-9,10-14,15-17
 }
+_YOUTH_CELLS = ["B01001_E003", "B01001_E004", "B01001_E005", "B01001_E006",
+                "B01001_E027", "B01001_E028", "B01001_E029", "B01001_E030"]
 COUNTY_PREFIX = "0500000US"
 # ACS "not available" sentinels
 _BAD = {-666666666, -999999999, -888888888, -222222222, -333333333, -555555555}
@@ -77,11 +82,16 @@ def _build_year(year: int) -> pd.DataFrame:
     m = pd.concat(parts, axis=1).reset_index()
     m["year"] = year
     m["population"] = m["B01003_E001"]
+    # under-18 population (ages 0-17): the exposure population for a youth-sport
+    # pipeline is a lot closer to "kids who could plausibly become a D1 recruit"
+    # than total county population (which includes retirees, toddlers, etc.).
+    m["youth_population"] = m[_YOUTH_CELLS].sum(axis=1, min_count=1)
     m["median_income"] = m["B19013_E001"].where(m["B19013_E001"] > 0)
     m["poverty_rate"] = (m["B17001_E002"] / m["B17001_E001"] * 100).where(m["B17001_E001"] > 0)
     edu = m[["B15003_E022", "B15003_E023", "B15003_E024", "B15003_E025"]].sum(axis=1)
     m["pct_bachelors"] = (edu / m["B15003_E001"] * 100).where(m["B15003_E001"] > 0)
-    return m[["county_fips", "year", "population", "median_income", "poverty_rate", "pct_bachelors"]]
+    return m[["county_fips", "year", "population", "youth_population", "median_income",
+              "poverty_rate", "pct_bachelors"]]
 
 
 def build(years: list[int] | None = None, force: bool = False) -> pd.DataFrame:

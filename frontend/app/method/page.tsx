@@ -54,7 +54,7 @@ const SECTIONS = [
   },
   {
     h: "Estimate parameters",
-    p: "For the statistical families, coefficients are fit on the training years with Python statsmodels — Poisson and negative-binomial models carry a log(population) offset so coefficients describe a representation rate. Custom equations fit nothing; the constants are yours.",
+    p: "For the statistical families, coefficients are fit on the training years with Python statsmodels — Poisson and negative-binomial models carry a log(youth population) offset (residents 0-17, not the whole county) so coefficients describe a representation rate among the population actually old enough to be a recruit. Custom equations fit nothing; the constants are yours.",
   },
   {
     h: "Validate out of sample",

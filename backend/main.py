@@ -57,7 +57,7 @@ def metadata():
              "note": "Ordinary least squares on the outcome. Works for any outcome; "
                      "a natural simple baseline."},
             {"key": "poisson", "label": "Poisson",
-             "note": "Log-linear count model with log(population) offset -> models a "
+             "note": "Log-linear count model with log(youth_population) offset -> models a "
                      "representation rate. Assumes mean = variance."},
             {"key": "negbin", "label": "Negative Binomial",
              "note": "Count model that adds an overdispersion parameter; preferred "

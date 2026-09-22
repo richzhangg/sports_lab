@@ -38,9 +38,9 @@ export default function LabPage() {
             testYear: m.years[m.years.length - 1],
             standardize: true,
             cvFolds: 0,
-            equation: "(p / 1000000) * (0.4 + 0.02 * b + 0.15 * t)",
+            equation: "(p / 100000) * (0.4 + 0.02 * b + 0.15 * t)",
             variables: [
-              { symbol: "p", column: "population" },
+              { symbol: "p", column: "youth_population" },
               { symbol: "b", column: "pct_bachelors" },
               { symbol: "t", column: "tennis_courts_per_100k" },
             ],

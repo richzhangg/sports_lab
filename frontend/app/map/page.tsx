@@ -199,6 +199,7 @@ function CountyPanel({
   const rows: [string, string][] = latest
     ? [
         ["Population", fmtInt(latest.population)],
+        ["Youth population (0-17)", fmtInt(latest.youth_population)],
         ["Median household income", latest.median_income == null ? "—" : `$${fmtInt(latest.median_income)}`],
         ["Poverty rate", latest.poverty_rate == null ? "—" : `${fmt(latest.poverty_rate, 1)}%`],
         ["Bachelor's degree or higher", latest.pct_bachelors == null ? "—" : `${fmt(latest.pct_bachelors, 1)}%`],

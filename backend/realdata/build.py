@@ -90,8 +90,9 @@ def build() -> pd.DataFrame:
         frames.append(panel)
 
     df = pd.concat(frames, ignore_index=True)
-    df = df.dropna(subset=["population", "median_income", "poverty_rate", "pct_bachelors"])
+    df = df.dropna(subset=["population", "youth_population", "median_income", "poverty_rate", "pct_bachelors"])
     df = df[df["population"] > 0]
+    df = df[df["youth_population"] > 0]
 
     df["tennis_courts_per_100k"] = df["tennis_courts"] / df["population"] * 100_000
     df["d1_rate_per_100k"] = df["d1_players"] / df["population"] * 100_000
@@ -106,7 +107,7 @@ def build() -> pd.DataFrame:
     df["community_id"] = df["county_fips"]
     df["community_name"] = df["county_name"].str.replace(r" County$", "", regex=True) + ", " + df["state"]
 
-    cols = ["community_id", "community_name", "state", "year", "population",
+    cols = ["community_id", "community_name", "state", "year", "population", "youth_population",
             "median_income", "poverty_rate", "pct_bachelors",
             "tennis_courts_per_100k", "pop_density", "d1_players", "d1_rate_per_100k",
             "acs_vintage"]

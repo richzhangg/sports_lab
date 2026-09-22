@@ -44,7 +44,11 @@ _SOCIO = [
     VariableSpec("pct_bachelors", "Education (bachelor's+)", "Share of adults 25+ with a bachelor's degree or higher.", "%"),
     VariableSpec("tennis_courts_per_100k", "Tennis access", "Tennis facilities (OSM) per 100k residents.", "courts/100k"),
     VariableSpec("pop_density", "Population density", "Residents per square mile.", "/sq mi"),
-    VariableSpec("population", "Population", "Community population (also usable as a raw predictor).", "people"),
+    VariableSpec("youth_population", "Youth population (0-17)",
+                 "Residents under 18 — the exposure population for a youth-sport pipeline, and the "
+                 "offset used by the count models (a lot closer to \"kids who could plausibly become "
+                 "a D1 recruit\" than total population).", "people"),
+    VariableSpec("population", "Total population", "Total community population, all ages.", "people"),
 ]
 _NOISE = [
     VariableSpec(f"noise_{k}", f"Nuisance variable {k}", "Pure noise — included to demonstrate overfitting.", "")
@@ -222,7 +226,7 @@ def players_search(q: str, limit: int = 60) -> dict:
     }
 
 
-_PANEL_FIELDS = ("year", "population", "median_income", "poverty_rate", "pct_bachelors",
+_PANEL_FIELDS = ("year", "population", "youth_population", "median_income", "poverty_rate", "pct_bachelors",
                  "tennis_courts_per_100k", "pop_density", "d1_players", "d1_rate_per_100k")
 
 

@@ -20,8 +20,8 @@ export interface Config {
 }
 
 export const PRESETS: { name: string; predictors: string[] }[] = [
-  { name: "Population only", predictors: ["population"] },
-  { name: "Population + Income", predictors: ["population", "median_income"] },
+  { name: "Youth population only", predictors: ["youth_population"] },
+  { name: "Youth population + Income", predictors: ["youth_population", "median_income"] },
   {
     name: "Socioeconomic + Geographic",
     predictors: ["median_income", "poverty_rate", "pct_bachelors", "tennis_courts_per_100k", "pop_density"],
@@ -37,10 +37,10 @@ export const PRESETS: { name: string; predictors: string[] }[] = [
 
 export const EXAMPLE_EQUATIONS: { label: string; equation: string; vars: VarBinding[] }[] = [
   {
-    label: "rate × population",
-    equation: "(p / 1000000) * (0.4 + 0.02 * b + 0.15 * t)",
+    label: "rate × youth population",
+    equation: "(p / 100000) * (0.4 + 0.02 * b + 0.15 * t)",
     vars: [
-      { symbol: "p", column: "population" },
+      { symbol: "p", column: "youth_population" },
       { symbol: "b", column: "pct_bachelors" },
       { symbol: "t", column: "tennis_courts_per_100k" },
     ],
@@ -55,9 +55,9 @@ export const EXAMPLE_EQUATIONS: { label: string; equation: string; vars: VarBind
   },
   {
     label: "threshold on access",
-    equation: "where(t > 3, (p / 100000) * t * 0.6, 0)",
+    equation: "where(t > 3, (p / 20000) * t * 0.6, 0)",
     vars: [
-      { symbol: "p", column: "population" },
+      { symbol: "p", column: "youth_population" },
       { symbol: "t", column: "tennis_courts_per_100k" },
     ],
   },

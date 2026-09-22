@@ -7,7 +7,7 @@ algorithm is implemented from scratch here.
 Model families
 --------------
   linear   : OLS on the chosen outcome.
-  poisson  : Poisson GLM (log link) on the count outcome, with log(population)
+  poisson  : Poisson GLM (log link) on the count outcome, with log(youth_population)
              offset so coefficients describe a representation *rate*.
   negbin   : Negative Binomial (NB2) regression, same offset. Estimates the
              overdispersion parameter alpha.
@@ -41,7 +41,7 @@ np.seterr(all="ignore")
 from data import get_dataframe
 
 COUNT_OUTCOME = "d1_players"
-OFFSET_COL = "population"
+OFFSET_COL = "youth_population"  # exposure for the count models: residents 0-17, not everyone
 FAMILIES = ["linear", "poisson", "negbin", "zip", "zinb", "custom"]
 COUNT_FAMILIES = {"poisson", "negbin", "zip", "zinb"}
 
@@ -625,7 +625,7 @@ def _baseline(outcome, family, ytr, yte, train, test, offset_tr, offset_te, is_c
         pred_te = np.full_like(yte, ytr.mean())
     return {
         "description": f"Intercept-only {family} model (no predictors)"
-                       + (" with log(population) offset" if is_count else ""),
+                       + (" with log(youth_population) offset" if is_count else ""),
         "train_metrics": _metrics(ytr, pred_tr, family, 1),
         "test_metrics": _metrics(yte, pred_te, family, 1),
     }

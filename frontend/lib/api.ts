@@ -192,6 +192,7 @@ export const searchPlayers = (q: string, limit = 60) =>
 export interface CountyYearRow {
   year: number;
   population: number | null;
+  youth_population: number | null;
   median_income: number | null;
   poverty_rate: number | null;
   pct_bachelors: number | null;
