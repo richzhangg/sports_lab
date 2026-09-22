@@ -146,8 +146,14 @@ def build() -> pd.DataFrame:
             f"Outcome = NCAA Division I tennis players on the {n_schools} programs the scraper "
             "could read (of ~300 D1 programs); it undercounts true D1 representation for "
             "counties whose players attend the ~30 schools not covered.",
-            "Predictors use ACS 5-year vintage (roster_year - 1); tennis courts are "
-            "a single current OSM snapshot.",
+            "Predictors use ACS 5-year vintage (roster_year - 1), clamped to the oldest/newest "
+            f"vintage actually available ({acs_years[0]}-{acs_years[-1]}). The Census's public bulk "
+            f"files only go back to the {acs_years[0]} table-based release without a much heavier "
+            f"legacy-format parser, so roster years {min(roster_years)}-{acs_years[0] + 1} all reuse "
+            f"the same {acs_years[0]} socioeconomic snapshot (see each row's acs_vintage column) — "
+            "income/poverty/education/youth-population will show ~zero year-to-year variation across "
+            "that span even though the roster outcome does vary. Tennis courts are a single current "
+            "OSM snapshot applied to every year.",
             f"{int(len(rosters) - len(matched))} of {len(rosters)} player-seasons have an "
             "international or unresolved hometown and are not placed in a U.S. county.",
         ],

@@ -17,8 +17,8 @@ from ..roster_schema import ROSTER_COLUMNS, validate
 from .schools import SCHOOLS, SPORTS, SEASONS
 from .sidearm import fetch_roster
 
-MAX_WORKERS = 12
-DEADLINE_S = 420  # stop waiting on stragglers after this; write what finished
+MAX_WORKERS = 16
+DEADLINE_S = 2400  # stop waiting on stragglers after this; write what finished
 
 
 def _scrape_school(sc: dict) -> tuple[list[dict], list[dict]]:

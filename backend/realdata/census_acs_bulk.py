@@ -7,10 +7,11 @@ Format: one pipe-delimited `.dat` per detail table, whole nation, columns
         GEO_ID | {TABLE}_E001 | {TABLE}_M001 | {TABLE}_E002 | ...
 County rows have GEO_ID = "0500000US" + 5-digit county FIPS.
 
-Only 2022 and 2023 vintages are supported here (earlier years use the messy
-legacy sequence-based format). That is sufficient for the pilot, whose roster
-years are 2023-2026 and which uses ACS vintage = roster_year - 1 clamped to the
-available range.
+Vintages 2021-2024 are supported here (the Census switched to this table-based
+layout starting with the 2017-2021 5-year release; earlier vintages use the
+messy legacy sequence-based format and are NOT pulled — build.py instead clamps
+older roster years to vintage 2021, the oldest one available here, and records
+the actual vintage used per row in acs_vintage / the provenance limitations).
 
 Produces the SAME output as census_acs.py:
   data/real/census_acs_counties.csv
@@ -28,7 +29,7 @@ import requests
 from .paths import CACHE, CENSUS_ACS, COUNTY_MASTER
 
 BASE = "https://www2.census.gov/programs-surveys/acs/summary_file/{y}/table-based-SF/data/5YRData/acsdt5y{y}-{t}.dat"
-SUPPORTED_YEARS = [2022, 2023]
+SUPPORTED_YEARS = [2021, 2022, 2023, 2024]
 
 # table -> estimate cells we need (E = estimate column suffix)
 NEEDED = {
