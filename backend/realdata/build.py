@@ -143,6 +143,13 @@ def build() -> pd.DataFrame:
             "rosters": f"Public NCAA Division I tennis team roster pages ({n_schools} programs)",
         },
         "limitations": [
+            "Some team sites don't actually vary their roster page by season (they silently serve "
+            "the current roster no matter what year is requested). The scraper detects this per "
+            "school/sport — a 'historical' fetch whose player set is still >60% identical to the "
+            "current roster at 3+ different older seasons — and keeps only that program's current "
+            "season rather than record fabricated multi-year history for it; a small number of "
+            "individual players may still show a longer season span than 4-5 years from name "
+            "collisions or a genuine grad-transfer/return.",
             f"Outcome = NCAA Division I tennis players on the {n_schools} programs the scraper "
             "could read (of ~300 D1 programs); it undercounts true D1 representation for "
             "counties whose players attend the ~30 schools not covered.",

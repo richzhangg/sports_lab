@@ -19,6 +19,45 @@ from .sidearm import fetch_roster
 
 MAX_WORKERS = 16
 DEADLINE_S = 2400  # stop waiting on stragglers after this; write what finished
+CURRENT_SEASON = max(SEASONS)  # the season fetched with no label -> the site's real "now"
+
+
+def _drop_non_archival_seasons(df: pd.DataFrame) -> pd.DataFrame:
+    """Some SIDEARM sites silently ignore the season suffix/query and just serve
+    the live roster no matter what year you ask for. A real historical roster
+    can't be near-identical to the CURRENT roster once a couple of years of
+    eligibility turnover have passed — so if a school+sport's "season" name-set
+    lands within 60% overlap of its current-season set at 3+ *different* older
+    seasons, that program's site isn't actually archiving seasons: keep only its
+    current-season row and drop the rest rather than record fabricated history.
+    """
+    if df.empty or "season" not in df.columns:
+        return df
+    sets = (df.groupby(["school", "gender", "season"])["player_name"]
+            .apply(lambda s: frozenset(s)))
+    flagged: dict[tuple, int] = {}
+    for (school, gender, season), names in sets.items():
+        gap = CURRENT_SEASON - season
+        if gap < 2 or not names:
+            continue
+        key = (school, gender)
+        base = sets.get((school, gender, CURRENT_SEASON))
+        if not base:
+            continue
+        jac = len(base & names) / len(base | names)
+        if jac > 0.6:
+            flagged[key] = flagged.get(key, 0) + 1
+    non_archival = {k for k, v in flagged.items() if v >= 3}
+    if non_archival:
+        drop = df.apply(
+            lambda r: (r["school"], r["gender"]) in non_archival and r["season"] != CURRENT_SEASON,
+            axis=1,
+        )
+        print(f"  {len(non_archival)} school/sport site(s) don't actually vary by season "
+              f"(serve the current roster regardless) — dropping {int(drop.sum())} "
+              "fabricated-looking historical rows, keeping only their current season.")
+        df = df[~drop].reset_index(drop=True)
+    return df
 
 
 def _scrape_school(sc: dict) -> tuple[list[dict], list[dict]]:
@@ -65,6 +104,7 @@ def run(only: set[str] | None = None, merge: bool = False) -> None:
 
     df = (validate(pd.DataFrame(all_rows, columns=ROSTER_COLUMNS)) if all_rows
           else pd.DataFrame(columns=ROSTER_COLUMNS))
+    df = _drop_non_archival_seasons(df)
     cov = pd.DataFrame(coverage)
     cov_path = f"{REAL}/roster_scrape_coverage.csv"
 
